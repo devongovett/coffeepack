@@ -33,10 +33,10 @@ There are two methods provided by coffeepack, `pack` and `unpack`.
     
     assert.deepEqual(MsgPack.unpack(MsgPack.pack(object)), object);
     
-By default, `msgpack.pack` returns a binary string, but if you'd like an array of bytes instead, just 
+By default, `MsgPack.pack` returns a binary string, but if you'd like an array of bytes instead, just 
 pass `true` as the second argument.
 
-`msgpack.unpack` expects either an array of bytes or a binary string and returns a JavaScript object.
+`MsgPack.unpack` expects either an array of bytes or a binary string and returns a JavaScript object.
 
 ## LICENSE
 
