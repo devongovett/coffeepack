@@ -1,0 +1,16 @@
+{
+  "name": "coffeepack",
+  "description": "An implementation of the MessagePack serialization format in pure CoffeeScript for Node.js and the browser.",
+  "version": "0.1.0",
+  "author": {
+      "name": "Devon Govett",
+      "email": "devongovett@gmail.com",
+      "url": "http://badassjs.com/"
+  },
+  "repository": {
+      "type": "git",
+      "url": "https://github.com/devongovett/coffeepack.git"
+  },
+  "bugs": "http://github.com/devongovett/coffeepack/issues",
+  "main": "msgpack.js"
+}
