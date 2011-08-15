@@ -1,6 +1,6 @@
 CoffeePack
 ----------
-An implementation of the MessagePack serialization format in pure CoffeeScript for Node.js and the browser.
+An implementation of the MessagePack serialization format in CoffeeScript for Node.js and the browser.
 
 [MessagePack](http://msgpack.org/) is a binary-based object serialization library. It's like JSON 
 but much more space efficient.
