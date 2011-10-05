@@ -18,7 +18,8 @@
   # NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
   # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
   # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-  */  var MsgPack;
+  */
+  var MsgPack;
   MsgPack = (function() {
     var array, idx, map, pack, raw, uint16, uint32, unpack;
     function MsgPack() {}
@@ -81,6 +82,8 @@
               bytes.push(0xcb, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
             } else if (val === Infinity) {
               bytes.push(0xcb, 0x7f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+            } else if (val === -Infinity) {
+              bytes.push(0xcb, 0xff, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
             } else if (Math.floor(val) === val) {
               if (val >= 0) {
                 if (val < 0x80) {
