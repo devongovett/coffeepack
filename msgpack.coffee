@@ -136,7 +136,7 @@ class MsgPack
                 
                     # float
                     else
-                        # TODO: encode single percision if possible
+                        # TODO: encode single precision if possible
                         sign = val < 0
                         val *= -1 if sign
                 
