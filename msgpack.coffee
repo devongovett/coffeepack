@@ -65,9 +65,12 @@ class MsgPack
                     if val isnt val
                         bytes.push 0xcb, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
             
-                    # infinity    
-                    else if val is Infinity # TODO: -Infinity?
+                    # infinity
+                    else if val is Infinity
                         bytes.push 0xcb, 0x7f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+            
+                    else if val is -Infinity
+                        bytes.push 0xcb, 0xff, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
             
                     # integer    
                     else if Math.floor(val) is val
