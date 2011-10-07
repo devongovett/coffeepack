@@ -307,7 +307,12 @@
       return (buf[idx++] << 8) | buf[idx++];
     };
     uint32 = function(buf) {
-      return (buf[idx++] << 24) | (buf[idx++] << 16) | (buf[idx++] << 8) | buf[idx++];
+      var num;
+      num = (buf[idx++] << 24) | (buf[idx++] << 16) | (buf[idx++] << 8) | buf[idx++];
+      if (num >= 0) {
+        return num;
+      }
+      return 0xFFFFFFFF + num + 1;
     };
     raw = function(buf, len) {
       var char, fromCharCode, i, iz, out;
