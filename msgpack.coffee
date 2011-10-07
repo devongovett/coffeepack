@@ -73,7 +73,7 @@ class MsgPack
                         bytes.push 0xcb, 0xff, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
             
                     # integer    
-                    else if Math.floor(val) is val
+                    else if Math.floor(val) is val and -0x8000000000000000 <= val < 0x10000000000000000
                         if val >= 0
                             # positive fixnum
                             if val < 0x80
@@ -92,16 +92,13 @@ class MsgPack
                                 bytes.push 0xce, val >>> 24, (val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff
                         
                             # uint64
-                            else if val < 0x10000000000000000
+                            else
                                 high = Math.floor(val / 0x100000000)
                                 low  = val & 0xffffffff
                                 bytes.push 0xcf, (high >> 24) & 0xff, (high >> 16) & 0xff,
                                                  (high >>  8) & 0xff,  high        & 0xff,
                                                  (low  >> 24) & 0xff, (low  >> 16) & 0xff,
                                                  (low  >>  8) & 0xff,  low         & 0xff
-                    
-                            else    
-                                throw 'Number too large.'
                     
                         else
                             # negative fixnum
@@ -123,16 +120,13 @@ class MsgPack
                                 bytes.push 0xd2, val >>> 24, (val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff
                         
                             # int64
-                            else if val >= -0x8000000000000000
+                            else
                                 high = Math.floor(val / 0x100000000)
                                 low  = val & 0xffffffff
                                 bytes.push 0xd3, (high >> 24) & 0xff, (high >> 16) & 0xff,
                                                  (high >>  8) & 0xff,  high        & 0xff,
                                                  (low  >> 24) & 0xff, (low  >> 16) & 0xff,
                                                  (low  >>  8) & 0xff,  low         & 0xff
-                    
-                            else    
-                                throw 'Number too small.'
                 
                     # float
                     else
