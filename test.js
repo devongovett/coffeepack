@@ -2,9 +2,8 @@ var MsgPack = require('coffeepack'),
     assert = require('assert');
 
 var object = [
-    { firstName: 'Devon', lastName: 'Govett', age: 18, alive: true, onaboat: false },
+    { firstName: 'Devon', lastName: 'Govett', alive: true, onaboat: false },
     { "float": 12.53, not: null, infi: Infinity, neg: -Infinity, unicode: "ü€" },
-    { large: 10000000000000000, lf: 10000000.2480, neg: -1900, negf: -18392.23749 },
     [
         Infinity,
         -Infinity,
@@ -21,7 +20,7 @@ var object = [
         -0xFFF0, //int16
         -0xFFFFFFF0, // int32
         -0xFFFFFFFFFFFFFF0, // int64
-
+        
         1.0384583e+34, // double with all fraction bits on
     ]
 ]
