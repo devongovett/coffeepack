@@ -359,9 +359,7 @@ class MsgPack
         return (buf[idx++] << 8) | buf[idx++]
        
     uint32 = (buf) ->
-        num = (buf[idx++] << 24) | (buf[idx++] << 16) | (buf[idx++] << 8) | buf[idx++]
-        num += 0x100000000 if num < 0 # correct the overflow
-        return num
+        return (buf[idx++] << 24 >>> 0) + ((buf[idx++] << 16) | (buf[idx++] << 8) | buf[idx++])
         
     raw = (buf, len) ->
         iz = idx + len
