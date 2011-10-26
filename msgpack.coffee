@@ -186,11 +186,11 @@ class MsgPack
                 
                         # map16    
                         else if len < 0x10000
-                            bytes.push 0xde, (size >>> 8) & 0xff, size & 0xff
+                            bytes.push 0xde, (len >>> 8) & 0xff, len & 0xff
                     
                         # map32
                         else if len < 0x100000000
-                            bytes.push 0xdf, len >>> 24, (len >> 16) & 0xff, (len >>  8) & 0xff, len & 0xff
+                            bytes.push 0xdf, (len >>> 24) & 0xff, (len >>> 16) & 0xff, (len >>> 8) & 0xff, len & 0xff
                     
                         else
                             throw 'Map has too many keys.'
