@@ -74,69 +74,46 @@ class MsgPack
             
                     # integer    
                     else if Math.floor(val) is val
-                        if val >= 0
-                            # positive fixnum
-                            if val < 0x80
-                                bytes.push val
-                    
-                            # uint8    
-                            else if val < 0x100
-                                bytes.push 0xcc, val
+                        # fixnum
+                        if -0x20 <= val < 0x80
+                            val += 0x100 if val < 0
+                            bytes.push val & 0xff
+                            
+                        # (u)int8
+                        else if -0x80 <= val < 0x100
+                            type = if val < 0 then 0xd0 else 0xcc
+                            val += 0x100 if val < 0
+                            bytes.push type, val & 0xff
                         
-                            # uint16
-                            else if val < 0x10000
-                                bytes.push 0xcd, val >> 8, val & 0xff
+                        # (u)int16    
+                        else if -0x8000 <= val < 0x10000
+                            type = if val < 0 then 0xd1 else 0xcd
+                            val += 0x10000 if val < 0
+                            bytes.push type, (val >>> 8) & 0xff, val & 0xff
                         
-                            # uint32
-                            else if val < 0x100000000
-                                bytes.push 0xce, val >>> 24, (val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff
-                        
-                            # uint64
-                            else if val < 0x10000000000000000
-                                high = Math.floor(val / 0x100000000)
-                                low  = val & 0xffffffff
-                                bytes.push 0xcf, (high >> 24) & 0xff, (high >> 16) & 0xff,
-                                                 (high >>  8) & 0xff,  high        & 0xff,
-                                                 (low  >> 24) & 0xff, (low  >> 16) & 0xff,
-                                                 (low  >>  8) & 0xff,  low         & 0xff
-                    
-                            else    
-                                throw 'Number too large.'
-                    
+                        # (u)int32    
+                        else if -0x80000000 <= val < 0x100000000
+                            type = if val < 0 then 0xd2 else 0xce
+                            val += 0x100000000 if val < 0
+                            bytes.push type, (val >>> 24) & 0xff, (val >>> 16) & 0xff, (val >>> 8) & 0xff, val & 0xff
+                            
+                        # (u)int64
+                        else if -0x8000000000000000 <= val < 0x10000000000000000
+                            type = if val < 0 then 0xd3 else 0xcf
+                            high = Math.floor(val / 0x100000000)
+                            low  = val & 0xffffffff
+                            bytes.push type, (high >>> 24) & 0xff, (high >>> 16) & 0xff,
+                                             (high >>>  8) & 0xff,  high         & 0xff,
+                                             (low  >>> 24) & 0xff, (low  >>> 16) & 0xff,
+                                             (low  >>>  8) & 0xff,  low          & 0xff
+                            
                         else
-                            # negative fixnum
-                            if val >= -32
-                                bytes.push 0xe0 + val + 32
-                        
-                            # int8
-                            else if val >= -0x80
-                                bytes.push 0xd0, val + 0x100
-                        
-                            # int16
-                            else if val >= -0x8000
-                                val += 0x10000
-                                bytes.push 0xd1, val >> 8, val & 0xff
-                        
-                            # int32
-                            else if val >= -0x80000000
-                                val += 0x100000000
-                                bytes.push 0xd2, val >>> 24, (val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff
-                        
-                            # int64
-                            else if val >= -0x8000000000000000
-                                high = Math.floor(val / 0x100000000)
-                                low  = val & 0xffffffff
-                                bytes.push 0xd3, (high >> 24) & 0xff, (high >> 16) & 0xff,
-                                                 (high >>  8) & 0xff,  high        & 0xff,
-                                                 (low  >> 24) & 0xff, (low  >> 16) & 0xff,
-                                                 (low  >>  8) & 0xff,  low         & 0xff
-                    
-                            else    
-                                throw 'Number too small.'
+                            throw 'Number too ' + if val < 0 then 'small.' else 'large.'
                 
                     # float
                     else
                         # TODO: encode single precision if possible
+                        # based on http://javascript.g.hatena.ne.jp/edvakf/20101128/1291000731
                         sign = val < 0
                         val *= -1 if sign
                 
@@ -157,40 +134,28 @@ class MsgPack
                                          (low  >>  8) & 0xff,  low         & 0xff
                                  
                 when 'string'
-                    len = val.length
-                    pos = bytes.length
-                    
-                    bytes.push 0 # placeholder byte for size, added below
-                    
-                    # utf8 encode
-                    for i in [0...val.length]
-                        char = val.charCodeAt(i)
-                
-                        if char < 0x80 # ASCII(0x00 ~ 0x7f)
-                            bytes.push char & 0x7f
-                    
-                        else if char < 0x0800
-                            bytes.push ((char >>> 6) & 0x1f) | 0xc0, (char & 0x3f) | 0x80
-                    
-                        else if char < 0x10000
-                            bytes.push ((char >>> 12) & 0x0f) | 0xe0, ((char >>> 6) & 0x3f) | 0x80, (char & 0x3f) | 0x80
-                    
-                    size = bytes.length - pos - 1
+                    # utf-8 encode
+                    # http://ecmanaut.blogspot.com/2006/07/encoding-decoding-utf8-in-javascript.html
+                    val = unescape(encodeURIComponent(val))
+                    size = val.length
                     
                     # fixraw
-                    if size < 32
-                        bytes[pos] = 0xa0 | size
-            
+                    if size < 0x20
+                        bytes.push 0xa0 | size
+                    
                     # raw16    
                     else if size < 0x10000
-                        bytes.splice pos, 1, 0xda, size >> 8, size & 0xff
-                
-                    # raw32
+                        bytes.push 0xda
+                    
+                    # raw32    
                     else if size < 0x100000000
-                        bytes.splice pos, 1, 0xdb, size >>> 24, (size >> 16) & 0xff, (size >> 8) & 0xff, size & 0xff
-            
-                    else    
+                        bytes.push 0xdb
+                        
+                    else
                         throw 'String too long.'
+                    
+                    for i in [0...size]
+                        bytes.push val.charCodeAt(i)
             
                 when 'object'
                     # array
@@ -203,11 +168,11 @@ class MsgPack
                 
                         # array16    
                         else if len < 0x10000
-                            bytes.push 0xdc, len >> 8, len & 0xff
+                            bytes.push 0xdc, (len >>> 8) & 0xff, len & 0xff
                     
                         # array 32
                         else if len < 0x100000000
-                            bytes.push 0xdd, len >>> 24, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff
+                            bytes.push 0xdd, (len >>> 24) & 0xff, (len >>> 16) & 0xff, (len >>> 8) & 0xff, len & 0xff
                     
                         else
                             throw 'Array too long.'
@@ -224,7 +189,7 @@ class MsgPack
                 
                         # map16    
                         else if len < 0x10000
-                            bytes.push 0xde, size >> 8, size & 0xff
+                            bytes.push 0xde, (size >>> 8) & 0xff, size & 0xff
                     
                         # map32
                         else if len < 0x100000000
@@ -332,8 +297,9 @@ class MsgPack
                     
                 # int64
                 when 0xd3
+                    # based on https://github.com/uupaa/msgpack.js/blob/master/msgpack.js#L317
                     num = buf[idx++]
-                    if num & 0x80 # sign -> avoid overflow
+                    if num & 0x80 # avoid sign overflow
                         return ((num ^ 0xff) * 0x100000000000000 +
                                 (buf[idx++] ^ 0xff) *   0x1000000000000 +
                                 (buf[idx++] ^ 0xff) *     0x10000000000 +
@@ -401,20 +367,13 @@ class MsgPack
     raw = (buf, len) ->
         iz = idx + len
         out = []
-        i = 0
         fromCharCode = String.fromCharCode
-        
         while idx < iz
-            char = buf[idx++]
-            
-            if char < 0x80
-                out[i++] = fromCharCode char
-            else if char < 0xe0
-                out[i++] = fromCharCode (char & 0x1f) <<  6 | (buf[idx++] & 0x3f)
-            else
-                out[i++] = fromCharCode (char & 0x0f) << 12 | (buf[idx++] & 0x3f) << 6 | (buf[idx++] & 0x3f)
-                                    
-        return out.join ''
+            out.push fromCharCode buf[idx++]
+        
+        # utf-8 decode
+        # http://ecmanaut.blogspot.com/2006/07/encoding-decoding-utf8-in-javascript.html
+        return decodeURIComponent(escape(out.join ''))
         
     array = (buf, num) ->
         out = []

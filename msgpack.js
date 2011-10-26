@@ -18,8 +18,7 @@
   # NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
   # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
   # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-  */
-  var MsgPack;
+  */  var MsgPack;
   MsgPack = (function() {
     var array, idx, map, pack, raw, uint16, uint32, unpack;
     function MsgPack() {}
@@ -65,7 +64,7 @@
       return unpack(data);
     };
     pack = function(val, bytes) {
-      var char, exp, frac, high, i, item, key, len, low, mapval, pos, sign, size, _i, _len, _ref;
+      var exp, frac, high, i, item, key, len, low, mapval, sign, size, type, _i, _len;
       if (val && typeof val === 'object' && typeof val.toJSON === 'function') {
         val = val.toJSON();
       }
@@ -85,40 +84,36 @@
             } else if (val === -Infinity) {
               bytes.push(0xcb, 0xff, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
             } else if (Math.floor(val) === val) {
-              if (val >= 0) {
-                if (val < 0x80) {
-                  bytes.push(val);
-                } else if (val < 0x100) {
-                  bytes.push(0xcc, val);
-                } else if (val < 0x10000) {
-                  bytes.push(0xcd, val >> 8, val & 0xff);
-                } else if (val < 0x100000000) {
-                  bytes.push(0xce, val >>> 24, (val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff);
-                } else if (val < 0x10000000000000000) {
-                  high = Math.floor(val / 0x100000000);
-                  low = val & 0xffffffff;
-                  bytes.push(0xcf, (high >> 24) & 0xff, (high >> 16) & 0xff, (high >> 8) & 0xff, high & 0xff, (low >> 24) & 0xff, (low >> 16) & 0xff, (low >> 8) & 0xff, low & 0xff);
-                } else {
-                  throw 'Number too large.';
+              if ((-0x20 <= val && val < 0x80)) {
+                if (val < 0) {
+                  val += 0x100;
                 }
-              } else {
-                if (val >= -32) {
-                  bytes.push(0xe0 + val + 32);
-                } else if (val >= -0x80) {
-                  bytes.push(0xd0, val + 0x100);
-                } else if (val >= -0x8000) {
+                bytes.push(val & 0xff);
+              } else if ((-0x80 <= val && val < 0x100)) {
+                type = val < 0 ? 0xd0 : 0xcc;
+                if (val < 0) {
+                  val += 0x100;
+                }
+                bytes.push(type, val & 0xff);
+              } else if ((-0x8000 <= val && val < 0x10000)) {
+                type = val < 0 ? 0xd1 : 0xcd;
+                if (val < 0) {
                   val += 0x10000;
-                  bytes.push(0xd1, val >> 8, val & 0xff);
-                } else if (val >= -0x80000000) {
-                  val += 0x100000000;
-                  bytes.push(0xd2, val >>> 24, (val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff);
-                } else if (val >= -0x8000000000000000) {
-                  high = Math.floor(val / 0x100000000);
-                  low = val & 0xffffffff;
-                  bytes.push(0xd3, (high >> 24) & 0xff, (high >> 16) & 0xff, (high >> 8) & 0xff, high & 0xff, (low >> 24) & 0xff, (low >> 16) & 0xff, (low >> 8) & 0xff, low & 0xff);
-                } else {
-                  throw 'Number too small.';
                 }
+                bytes.push(type, (val >>> 8) & 0xff, val & 0xff);
+              } else if ((-0x80000000 <= val && val < 0x100000000)) {
+                type = val < 0 ? 0xd2 : 0xce;
+                if (val < 0) {
+                  val += 0x100000000;
+                }
+                bytes.push(type, (val >>> 24) & 0xff, (val >>> 16) & 0xff, (val >>> 8) & 0xff, val & 0xff);
+              } else if ((-0x8000000000000000 <= val && val < 0x10000000000000000)) {
+                type = val < 0 ? 0xd3 : 0xcf;
+                high = Math.floor(val / 0x100000000);
+                low = val & 0xffffffff;
+                bytes.push(type, (high >>> 24) & 0xff, (high >>> 16) & 0xff, (high >>> 8) & 0xff, high & 0xff, (low >>> 24) & 0xff, (low >>> 16) & 0xff, (low >>> 8) & 0xff, low & 0xff);
+              } else {
+                throw 'Number too ' + (val < 0 ? 'small.' : 'large.');
               }
             } else {
               sign = val < 0;
@@ -136,28 +131,19 @@
             }
             break;
           case 'string':
-            len = val.length;
-            pos = bytes.length;
-            bytes.push(0);
-            for (i = 0, _ref = val.length; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
-              char = val.charCodeAt(i);
-              if (char < 0x80) {
-                bytes.push(char & 0x7f);
-              } else if (char < 0x0800) {
-                bytes.push(((char >>> 6) & 0x1f) | 0xc0, (char & 0x3f) | 0x80);
-              } else if (char < 0x10000) {
-                bytes.push(((char >>> 12) & 0x0f) | 0xe0, ((char >>> 6) & 0x3f) | 0x80, (char & 0x3f) | 0x80);
-              }
-            }
-            size = bytes.length - pos - 1;
-            if (size < 32) {
-              bytes[pos] = 0xa0 | size;
+            val = unescape(encodeURIComponent(val));
+            size = val.length;
+            if (size < 0x20) {
+              bytes.push(0xa0 | size);
             } else if (size < 0x10000) {
-              bytes.splice(pos, 1, 0xda, size >> 8, size & 0xff);
+              bytes.push(0xda);
             } else if (size < 0x100000000) {
-              bytes.splice(pos, 1, 0xdb, size >>> 24, (size >> 16) & 0xff, (size >> 8) & 0xff, size & 0xff);
+              bytes.push(0xdb);
             } else {
               throw 'String too long.';
+            }
+            for (i = 0; 0 <= size ? i < size : i > size; 0 <= size ? i++ : i--) {
+              bytes.push(val.charCodeAt(i));
             }
             break;
           case 'object':
@@ -166,9 +152,9 @@
               if (len < 16) {
                 bytes.push(0x90 + len);
               } else if (len < 0x10000) {
-                bytes.push(0xdc, len >> 8, len & 0xff);
+                bytes.push(0xdc, (len >>> 8) & 0xff, len & 0xff);
               } else if (len < 0x100000000) {
-                bytes.push(0xdd, len >>> 24, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff);
+                bytes.push(0xdd, (len >>> 24) & 0xff, (len >>> 16) & 0xff, (len >>> 8) & 0xff, len & 0xff);
               } else {
                 throw 'Array too long.';
               }
@@ -181,7 +167,7 @@
               if (len < 16) {
                 bytes.push(0x80 + len);
               } else if (len < 0x10000) {
-                bytes.push(0xde, size >> 8, size & 0xff);
+                bytes.push(0xde, (size >>> 8) & 0xff, size & 0xff);
               } else if (len < 0x100000000) {
                 bytes.push(0xdf, len >>> 24, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff);
               } else {
@@ -310,22 +296,14 @@
       return (buf[idx++] << 24) | (buf[idx++] << 16) | (buf[idx++] << 8) | buf[idx++];
     };
     raw = function(buf, len) {
-      var char, fromCharCode, i, iz, out;
+      var fromCharCode, iz, out;
       iz = idx + len;
       out = [];
-      i = 0;
       fromCharCode = String.fromCharCode;
       while (idx < iz) {
-        char = buf[idx++];
-        if (char < 0x80) {
-          out[i++] = fromCharCode(char);
-        } else if (char < 0xe0) {
-          out[i++] = fromCharCode((char & 0x1f) << 6 | (buf[idx++] & 0x3f));
-        } else {
-          out[i++] = fromCharCode((char & 0x0f) << 12 | (buf[idx++] & 0x3f) << 6 | (buf[idx++] & 0x3f));
-        }
+        out.push(fromCharCode(buf[idx++]));
       }
-      return out.join('');
+      return decodeURIComponent(escape(out.join('')));
     };
     array = function(buf, num) {
       var out;
