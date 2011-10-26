@@ -73,7 +73,7 @@ class MsgPack
                         bytes.push 0xcb, 0xff, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
             
                     # integer    
-                    else if Math.floor(val) is val
+                    else if Math.floor(val) is val and -0x8000000000000000 <= val < 0x10000000000000000
                         # fixnum
                         if -0x20 <= val < 0x80
                             val += 0x100 if val < 0
@@ -85,20 +85,20 @@ class MsgPack
                             val += 0x100 if val < 0
                             bytes.push type, val & 0xff
                         
-                        # (u)int16    
+                        # (u)int16
                         else if -0x8000 <= val < 0x10000
                             type = if val < 0 then 0xd1 else 0xcd
                             val += 0x10000 if val < 0
                             bytes.push type, (val >>> 8) & 0xff, val & 0xff
                         
-                        # (u)int32    
+                        # (u)int32
                         else if -0x80000000 <= val < 0x100000000
                             type = if val < 0 then 0xd2 else 0xce
                             val += 0x100000000 if val < 0
                             bytes.push type, (val >>> 24) & 0xff, (val >>> 16) & 0xff, (val >>> 8) & 0xff, val & 0xff
                             
                         # (u)int64
-                        else if -0x8000000000000000 <= val < 0x10000000000000000
+                        else
                             type = if val < 0 then 0xd3 else 0xcf
                             high = Math.floor(val / 0x100000000)
                             low  = val & 0xffffffff
@@ -106,11 +106,8 @@ class MsgPack
                                              (high >>>  8) & 0xff,  high         & 0xff,
                                              (low  >>> 24) & 0xff, (low  >>> 16) & 0xff,
                                              (low  >>>  8) & 0xff,  low          & 0xff
-                            
-                        else
-                            throw 'Number too ' + if val < 0 then 'small.' else 'large.'
                 
-                    # float
+                    # double
                     else
                         # TODO: encode single precision if possible
                         # based on http://javascript.g.hatena.ne.jp/edvakf/20101128/1291000731
@@ -362,7 +359,9 @@ class MsgPack
         return (buf[idx++] << 8) | buf[idx++]
        
     uint32 = (buf) ->
-        return (buf[idx++] << 24) | (buf[idx++] << 16) | (buf[idx++] << 8) | buf[idx++]
+        num = (buf[idx++] << 24) | (buf[idx++] << 16) | (buf[idx++] << 8) | buf[idx++]
+        num += 0x100000000 if num < 0 # correct the overflow
+        return num
         
     raw = (buf, len) ->
         iz = idx + len

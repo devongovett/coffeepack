@@ -83,7 +83,7 @@
               bytes.push(0xcb, 0x7f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
             } else if (val === -Infinity) {
               bytes.push(0xcb, 0xff, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
-            } else if (Math.floor(val) === val) {
+            } else if (Math.floor(val) === val && (-0x8000000000000000 <= val && val < 0x10000000000000000)) {
               if ((-0x20 <= val && val < 0x80)) {
                 if (val < 0) {
                   val += 0x100;
@@ -107,13 +107,11 @@
                   val += 0x100000000;
                 }
                 bytes.push(type, (val >>> 24) & 0xff, (val >>> 16) & 0xff, (val >>> 8) & 0xff, val & 0xff);
-              } else if ((-0x8000000000000000 <= val && val < 0x10000000000000000)) {
+              } else {
                 type = val < 0 ? 0xd3 : 0xcf;
                 high = Math.floor(val / 0x100000000);
                 low = val & 0xffffffff;
                 bytes.push(type, (high >>> 24) & 0xff, (high >>> 16) & 0xff, (high >>> 8) & 0xff, high & 0xff, (low >>> 24) & 0xff, (low >>> 16) & 0xff, (low >>> 8) & 0xff, low & 0xff);
-              } else {
-                throw 'Number too ' + (val < 0 ? 'small.' : 'large.');
               }
             } else {
               sign = val < 0;
@@ -293,7 +291,12 @@
       return (buf[idx++] << 8) | buf[idx++];
     };
     uint32 = function(buf) {
-      return (buf[idx++] << 24) | (buf[idx++] << 16) | (buf[idx++] << 8) | buf[idx++];
+      var num;
+      num = (buf[idx++] << 24) | (buf[idx++] << 16) | (buf[idx++] << 8) | buf[idx++];
+      if (num < 0) {
+        num += 0x100000000;
+      }
+      return num;
     };
     raw = function(buf, len) {
       var fromCharCode, iz, out;
