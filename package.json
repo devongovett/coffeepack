@@ -2,7 +2,7 @@
   "name": "coffeepack",
   "description": "An implementation of the MessagePack serialization format in pure CoffeeScript for Node.js and the browser.",
   "keywords": ["msgpack", "messagepack"],
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
       "name": "Devon Govett",
       "email": "devongovett@gmail.com",
