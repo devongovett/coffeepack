@@ -1,4 +1,5 @@
 (function() {
+
   /*
   # An implementation of the MessagePack serialization format - http://msgpack.org/
   # Copyright (c) 2011 Devon Govett
@@ -18,25 +19,28 @@
   # NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
   # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
   # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-  */  var MsgPack;
+  */
+
+  var MsgPack;
+
   MsgPack = (function() {
     var array, idx, map, pack, raw, uint16, uint32, unpack;
+
     function MsgPack() {}
+
     if (typeof module !== "undefined" && module !== null ? module.exports : void 0) {
       module.exports = MsgPack;
     } else {
       window.MsgPack = MsgPack;
     }
+
     idx = 0;
+
     MsgPack.pack = function(data, byteArray) {
       var byte, bytes, fcc;
-      if (byteArray == null) {
-        byteArray = false;
-      }
+      if (byteArray == null) byteArray = false;
       bytes = pack(data, []);
-      if (byteArray) {
-        return bytes;
-      }
+      if (byteArray) return bytes;
       fcc = String.fromCharCode;
       return ((function() {
         var _i, _len, _results;
@@ -48,6 +52,7 @@
         return _results;
       })()).join('');
     };
+
     MsgPack.unpack = function(data) {
       var i;
       if (typeof data === 'string') {
@@ -63,6 +68,7 @@
       idx = 0;
       return unpack(data);
     };
+
     pack = function(val, bytes) {
       var exp, frac, high, i, item, key, len, low, mapval, sign, size, type, _i, _len;
       if (val && typeof val === 'object' && typeof val.toJSON === 'function') {
@@ -85,27 +91,19 @@
               bytes.push(0xcb, 0xff, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
             } else if (Math.floor(val) === val && (-0x8000000000000000 <= val && val < 0x10000000000000000)) {
               if ((-0x20 <= val && val < 0x80)) {
-                if (val < 0) {
-                  val += 0x100;
-                }
+                if (val < 0) val += 0x100;
                 bytes.push(val & 0xff);
               } else if ((-0x80 <= val && val < 0x100)) {
                 type = val < 0 ? 0xd0 : 0xcc;
-                if (val < 0) {
-                  val += 0x100;
-                }
+                if (val < 0) val += 0x100;
                 bytes.push(type, val & 0xff);
               } else if ((-0x8000 <= val && val < 0x10000)) {
                 type = val < 0 ? 0xd1 : 0xcd;
-                if (val < 0) {
-                  val += 0x10000;
-                }
+                if (val < 0) val += 0x10000;
                 bytes.push(type, (val >>> 8) & 0xff, val & 0xff);
               } else if ((-0x80000000 <= val && val < 0x100000000)) {
                 type = val < 0 ? 0xd2 : 0xce;
-                if (val < 0) {
-                  val += 0x100000000;
-                }
+                if (val < 0) val += 0x100000000;
                 bytes.push(type, (val >>> 24) & 0xff, (val >>> 16) & 0xff, (val >>> 8) & 0xff, val & 0xff);
               } else {
                 type = val < 0 ? 0xd3 : 0xcf;
@@ -115,15 +113,11 @@
               }
             } else {
               sign = val < 0;
-              if (sign) {
-                val *= -1;
-              }
+              if (sign) val *= -1;
               exp = ((Math.log(val) / Math.LN2) + 1023) | 0;
               frac = val * Math.pow(2, 52 + 1023 - exp);
               low = frac & 0xffffffff;
-              if (sign) {
-                exp |= 0x800;
-              }
+              if (sign) exp |= 0x800;
               high = ((frac / 0x100000000) & 0xfffff) | (exp << 20);
               bytes.push(0xcb, (high >> 24) & 0xff, (high >> 16) & 0xff, (high >> 8) & 0xff, high & 0xff, (low >> 24) & 0xff, (low >> 16) & 0xff, (low >> 8) & 0xff, low & 0xff);
             }
@@ -134,9 +128,9 @@
             if (size < 0x20) {
               bytes.push(0xa0 | size);
             } else if (size < 0x10000) {
-              bytes.push(0xda);
+              bytes.push(0xda, (size >>> 8) & 0xff, size & 0xff);
             } else if (size < 0x100000000) {
-              bytes.push(0xdb);
+              bytes.push(0xdb, (size >>> 24) & 0xff, (size >>> 16) & 0xff, (size >>> 8) & 0xff, size & 0xff);
             } else {
               throw 'String too long.';
             }
@@ -184,15 +178,12 @@
       }
       return bytes;
     };
+
     unpack = function(buf) {
       var byte, exp, frac, num, sign;
       byte = buf[idx++];
-      if (byte < 0x80) {
-        return byte;
-      }
-      if (byte >= 0xe0) {
-        return byte - 0x100;
-      }
+      if (byte < 0x80) return byte;
+      if (byte >= 0xe0) return byte - 0x100;
       if (byte >= 0xc0) {
         switch (byte) {
           case 0xc0:
@@ -203,9 +194,7 @@
             return true;
           case 0xca:
             num = uint32(buf);
-            if (!num || num === 0x80000000) {
-              return 0.0;
-            }
+            if (!num || num === 0x80000000) return 0.0;
             sign = (num >> 31) * 2 + 1;
             exp = (num >> 23) & 0xff;
             frac = num & 0x7fffff;
@@ -276,23 +265,20 @@
         }
         throw 'Invalid variable code';
       }
-      if (byte >= 0xa0) {
-        return raw(buf, byte & 0x1f);
-      }
-      if (byte >= 0x90) {
-        return array(buf, byte & 0xf);
-      }
-      if (byte >= 0x80) {
-        return map(buf, byte & 0xf);
-      }
+      if (byte >= 0xa0) return raw(buf, byte & 0x1f);
+      if (byte >= 0x90) return array(buf, byte & 0xf);
+      if (byte >= 0x80) return map(buf, byte & 0xf);
       throw "Unknown sequence encountered.";
     };
+
     uint16 = function(buf) {
       return (buf[idx++] << 8) | buf[idx++];
     };
+
     uint32 = function(buf) {
       return (buf[idx++] << 24 >>> 0) + ((buf[idx++] << 16) | (buf[idx++] << 8) | buf[idx++]);
     };
+
     raw = function(buf, len) {
       var fromCharCode, iz, out;
       iz = idx + len;
@@ -303,6 +289,7 @@
       }
       return decodeURIComponent(escape(out.join('')));
     };
+
     array = function(buf, num) {
       var out;
       out = [];
@@ -311,6 +298,7 @@
       }
       return out;
     };
+
     map = function(buf, num) {
       var key, out;
       out = {};
@@ -320,6 +308,9 @@
       }
       return out;
     };
+
     return MsgPack;
+
   })();
+
 }).call(this);
