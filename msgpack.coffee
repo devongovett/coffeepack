@@ -142,11 +142,11 @@ class MsgPack
                     
                     # raw16    
                     else if size < 0x10000
-                        bytes.push 0xda
+                        bytes.push 0xda, (size >>> 8) & 0xff, size & 0xff
                     
                     # raw32    
                     else if size < 0x100000000
-                        bytes.push 0xdb
+                        bytes.push 0xdb, (size >>> 24) & 0xff, (size >>> 16) & 0xff, (size >>> 8) & 0xff, size & 0xff
                         
                     else
                         throw 'String too long.'

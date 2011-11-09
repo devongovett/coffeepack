@@ -22,7 +22,9 @@ var object = [
         -0xFFFFFFFFFFFFFF0, // int64
         
         1.0384583e+34, // double with all fraction bits on
-    ]
+    ],
+    // long string
+    '50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75'
 ]
 
 assert.deepEqual(MsgPack.unpack(MsgPack.pack(object)), object);
