@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/devongovett/coffeepack.png)](http://travis-ci.org/devongovett/coffeepack)
 CoffeePack
 ----------
 An implementation of the MessagePack serialization format in CoffeeScript for Node.js and the browser.
